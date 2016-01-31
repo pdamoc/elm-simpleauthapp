@@ -15,7 +15,7 @@ type alias Model =
   , failure: Maybe String 
   , authKey : Maybe AuthKey }
 
-type Action = Type String | Post | Posted (Result String String)
+type Action = Type String | Post | Posted (Result String String) | UpdateAuthKey (Maybe AuthKey)
 
 init : Model
 init = Model [] "" Nothing Nothing 
@@ -35,6 +35,8 @@ update action model =
       case result of 
         Ok msg -> noFx <| Model (msg::model.messages) "" Nothing model.authKey
         Err msg -> noFx <| Model model.messages "" (Just msg) model.authKey
+
+    UpdateAuthKey key -> noFx {model | authKey=key}
 
 onInput : Signal.Address Action -> (String-> Action) -> Attribute
 onInput address destination =
@@ -68,5 +70,5 @@ shouldLogout : Model -> Bool
 shouldLogout model = 
   (Maybe.withDefault "" model.failure) == "AuthKey Expired"
 
-updateAuthKey : Maybe AuthKey -> Model -> Model
-updateAuthKey key model = { model | authKey = key}
+updateAuthKey : Maybe AuthKey -> Action
+updateAuthKey key = UpdateAuthKey key

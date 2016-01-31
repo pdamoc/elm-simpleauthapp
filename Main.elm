@@ -3,7 +3,7 @@ import Effects exposing (Effects, Never)
 import Task exposing (Task)
 
 import LogIn
-import FirstPage
+import FirstPage exposing (updateAuthKey)
 import AuthService exposing (AuthKey)
 
 import Html exposing (..)
@@ -29,7 +29,8 @@ update action model =
       let
         (logInData', fx) = LogIn.update logInAction model.logInData
         authKey = LogIn.getAuthKey logInData'
-        data' = FirstPage.updateAuthKey authKey model.data
+        
+        (data', _) = FirstPage.update (updateAuthKey authKey) model.data
 
         model' = 
           { model | logInData = logInData'
