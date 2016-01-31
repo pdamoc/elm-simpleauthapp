@@ -5,21 +5,21 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (on, onClick, targetValue)
 import Effects exposing (Effects)
 
-import AuthService exposing (authorize)
+import AuthService exposing (authorize, AuthKey)
 
 
 type alias Model = 
   { username : String 
   , password : String
-  , auth : Bool
+  , authKey : Maybe AuthKey
   , failed : Bool}
 
 init : Model
-init = Model "" "" False False
+init = Model "" "" Nothing False
 
 type LogInField = Username | Password
 
-type Action = Type LogInField String | LogIn | Valid Bool 
+type Action = Type LogInField String | LogIn | Valid (Maybe AuthKey) 
 
 noFx : Model -> (Model, Effects Action)
 noFx model = (model, Effects.none)
@@ -32,7 +32,14 @@ update action model =
         Username -> noFx {model | username = str}
         Password -> noFx {model | password = str}
 
-    Valid valid ->  noFx {model | auth=valid, failed = not valid}
+    Valid authKey ->  
+      let 
+        failed = 
+          case authKey of
+            Nothing -> True
+            Just s -> False
+      in 
+        noFx {model | authKey=authKey, failed = failed}
 
     LogIn -> (model, authorize model.username model.password Valid)
 
@@ -69,6 +76,6 @@ view address model =
     else text ""
   ]
 
-isValid : Model -> Bool
-isValid model = model.auth
+getAuthKey : Model -> Maybe AuthKey
+getAuthKey model = model.authKey
 

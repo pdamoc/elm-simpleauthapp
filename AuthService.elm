@@ -3,10 +3,15 @@ module AuthService where
 import Task exposing (Task, andThen)
 import Effects exposing (Effects, Never)
 
-authorize : String -> String -> (Bool -> a) -> Effects a
+type alias AuthKey = String
+
+authorize : String -> String -> (Maybe AuthKey -> a) -> Effects a
 authorize username password toAction=
   let 
-    validation = (username == "admin") && (password == "admin")
+    validation = 
+      if (username == "admin") && (password == "admin") 
+      then Just "AuthKey"
+      else Nothing
     task = 
       (Task.succeed validation)
       |> Task.map toAction
