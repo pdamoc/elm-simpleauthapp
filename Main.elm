@@ -7,17 +7,20 @@ import FirstPage
 import AuthService exposing (AuthKey)
 
 import Html exposing (..)
-import Html.Events exposing (onClick)
 
 type alias Model = 
   { authKey : Maybe AuthKey 
-  , logInData : LogIn.Model
+  , logInData : LogIn.Model Action
   , data : FirstPage.Model }
 
-type Action = Auth LogIn.Action | LoggedIn FirstPage.Action | Logout
+type Action = Auth LogIn.Action | FirstPage FirstPage.Action | Logout
 
 init : (Model, Effects Action)
-init = (Model Nothing LogIn.init FirstPage.init , Effects.none)
+init = 
+  ({ authKey = Nothing
+  , logInData = LogIn.init Auth Logout
+  , data = FirstPage.init
+  } , Effects.none)
 
 update : Action -> Model -> (Model, Effects Action)
 update action model = 
@@ -26,35 +29,35 @@ update action model =
       let
         (logInData', fx) = LogIn.update logInAction model.logInData
         authKey = LogIn.getAuthKey logInData'
-      in 
-        ({model | logInData = logInData', authKey=authKey}, Effects.map Auth fx) 
+        data' = FirstPage.updateAuthKey authKey model.data
 
-    LoggedIn pageAction -> 
-      case model.authKey of
-        Nothing -> update Logout model
-        Just authKey -> 
-          let
-            (data', fx) = FirstPage.update authKey pageAction model.data
-            shouldLogout = FirstPage.shouldLogout model.data
-          in 
-            if shouldLogout 
-            then update Logout model
-            else ({model | data = data'}, Effects.map LoggedIn fx)
+        model' = 
+          { model | logInData = logInData'
+          , authKey=authKey
+          , data = data' }
+      in 
+        (model', fx) 
+
+    FirstPage pageAction -> 
+      let
+        (data', fx) = FirstPage.update pageAction model.data
+        shouldLogout = FirstPage.shouldLogout data'
+      in 
+        if shouldLogout 
+        then update Logout model
+        else ({model | data = data'}, Effects.map FirstPage fx)
 
     Logout -> 
-        ({model | authKey = Nothing, logInData = LogIn.init }, Effects.none)
+        ({model | authKey = Nothing, logInData = LogIn.init Auth Logout}, Effects.none)
 
 view : Signal.Address Action -> Model -> Html 
 view address model =
-  case model.authKey of
-    Nothing -> 
-      LogIn.view (Signal.forwardTo address Auth) model.logInData
-    Just authKey -> 
-      div [] 
-      [ FirstPage.view (Signal.forwardTo address LoggedIn) model.data   
-      , br [] []
-      , button [onClick address Logout] [text "Logout"]
-      ]       
+  div []
+  [ LogIn.view (Signal.forwardTo address Auth) model.logInData
+  , br [] [] 
+
+  , FirstPage.view (Signal.forwardTo address FirstPage) model.data   
+  ]       
   
 app : StartApp.App Model
 app = StartApp.start 
