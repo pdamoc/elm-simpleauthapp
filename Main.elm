@@ -47,8 +47,7 @@ update action model =
         then update Logout model
         else ({model | data = data'}, Effects.map FirstPage fx)
 
-    Logout -> 
-        ({model | authKey = Nothing, logInData = LogIn.init Auth Logout}, Effects.none)
+    Logout -> init
 
 view : Signal.Address Action -> Model -> Html 
 view address model =
