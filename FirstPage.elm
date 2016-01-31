@@ -56,3 +56,7 @@ view address model =
   , br [] []
   , text <| Maybe.withDefault "" model.failure
   ]    
+
+shouldLogout : Model -> Bool
+shouldLogout model = 
+  (Maybe.withDefault "" model.failure) == "AuthKey Expired"

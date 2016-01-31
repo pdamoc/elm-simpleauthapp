@@ -35,8 +35,11 @@ update action model =
         Just authKey -> 
           let
             (data', fx) = FirstPage.update authKey pageAction model.data
+            shouldLogout = FirstPage.shouldLogout model.data
           in 
-            ({model | data = data'}, Effects.map LoggedIn fx)
+            if shouldLogout 
+            then update Logout model
+            else ({model | data = data'}, Effects.map LoggedIn fx)
 
     Logout -> 
         ({model | authKey = Nothing, logInData = LogIn.init }, Effects.none)
